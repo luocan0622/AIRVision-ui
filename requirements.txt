@@ -1,0 +1,21 @@
+# 测试框架
+pytest>=7.4.0
+pytest-html>=4.1.0
+pytest-ordering>=0.6
+pytest-timeout>=2.2.0
+
+# Windows 自动化
+pywinauto>=0.6.8
+pyautogui>=0.9.54
+pyperclip>=1.8.2
+pywin32>=306
+
+# 图像处理
+Pillow>=10.0.0
+
+# 配置和日志
+PyYAML>=6.0
+loguru>=0.7.0
+
+# 报告
+allure-pytest>=2.13.0

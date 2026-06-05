@@ -1,0 +1,34 @@
+# Application under test configuration
+app:
+  # Path to the application executable
+  path: "C:/Users/luoca/Desktop/AirVisionAPP-v0.6-alpha-update/AIRVisionApp.exe"
+  # Application title for window matching
+  title: "MainWindow"
+  # Backend: "uia" (modern apps) or "win32" (legacy apps)
+  backend: "uia"
+  # Timeout for waiting elements (seconds)
+  timeout: 10
+  # Retry interval (seconds)
+  retry_interval: 0.5
+  # 测试结束后是否关闭应用（调试时设为 false，保持窗口打开）
+  close_on_finish: false
+
+# 测试数据路径（项目/工作流/模板图片等）
+test_paths:
+  project: "C:/Users/luoca/Desktop/test/new_project"
+  save_as_project: "C:/Users/luoca/Desktop/test/Save_AS_Project"
+  template_images: "C:/Users/luoca/Desktop/test/模型/重命名"
+  default_template_image: "moban1.png"
+  default_depth_image: "moban2.png"
+  default_workflow_filename: "Untitled-1.json"
+
+# Test environment settings
+environment:
+  # Screenshot on failure
+  screenshot_on_failure: true
+  # Screenshot directory
+  screenshot_dir: "screenshots"
+  # Log directory
+  log_dir: "logs"
+  # Report directory
+  report_dir: "reports"
