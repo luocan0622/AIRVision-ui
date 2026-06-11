@@ -1,12 +1,24 @@
-"""MainPage 业务 Mixin（由 pages/main_page.py 组合）。"""
-from tests.model.common import CommonMixin
-from tests.model.filter import FILTER_TOOL_COUNT, FILTER_TOOLS, get_filter_tool
-from tests.model.help import HelpMixin
-from tests.model.menu_bar import MenuBarMixin
-from tests.model.project import ProjectMixin
-from tests.model.toolbar import ToolbarMixin
-from tests.model.tools import ToolsMixin
-from tests.model.workflow import WorkflowMixin
+"""MainPage 业务 Mixin（已迁移至 pages/mixins，本包仅保留兼容 re-export）。"""
+import warnings
+
+from pages.mixins import (  # noqa: F401
+    CommonMixin,
+    FILTER_TOOL_COUNT,
+    FILTER_TOOLS,
+    HelpMixin,
+    MenuBarMixin,
+    ProjectMixin,
+    ToolbarMixin,
+    ToolsMixin,
+    WorkflowMixin,
+    get_filter_tool,
+)
+
+warnings.warn(
+    "tests.model 已弃用，请改用 pages.mixins",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 __all__ = [
     "CommonMixin",

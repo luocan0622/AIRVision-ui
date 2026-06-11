@@ -8,8 +8,6 @@ app:
   backend: "uia"
   # Timeout for waiting elements (seconds)
   timeout: 10
-  # Retry interval (seconds)
-  retry_interval: 0.5
   # 测试结束后是否关闭应用（调试时设为 false，保持窗口打开）
   close_on_finish: false
 
@@ -21,14 +19,3 @@ test_paths:
   default_template_image: "moban1.png"
   default_depth_image: "moban2.png"
   default_workflow_filename: "Untitled-1.json"
-
-# Test environment settings
-environment:
-  # Screenshot on failure
-  screenshot_on_failure: true
-  # Screenshot directory
-  screenshot_dir: "screenshots"
-  # Log directory
-  log_dir: "logs"
-  # Report directory
-  report_dir: "reports"

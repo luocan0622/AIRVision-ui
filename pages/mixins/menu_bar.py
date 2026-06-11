@@ -1,7 +1,7 @@
-"""主窗口顶部菜单栏。"""
+﻿"""主窗口顶部菜单栏。"""
 import time
 
-from tests.model.locators import HEADER
+from pages.mixins.locators import HEADER
 from utils.logger import logger
 
 

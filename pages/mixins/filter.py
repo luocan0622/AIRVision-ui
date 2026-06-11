@@ -1,8 +1,9 @@
-"""右键菜单中的 40 个工具定义。
+﻿"""右键菜单中的 40 个工具定义。
 
 添加任意工具::
 
     page.add_workflow_tool("d3_plane_fitting")      # 3D 算法靠后 → 自动 Filter 搜索 / 滚动
+
     page.add_workflow_tool("communication_send")    # 其它分类同理
 
 菜单行号（含 Filter 行 0、分类行、工具行）由 ``global_menu_line_index`` 计算；
@@ -55,11 +56,10 @@ FILTER_TOOLS: tuple[FilterToolDef, ...] = (
         "3D 圆检测",
         _CAT_3D_ALGO,
         0,
-        "3D circle detection",
+        tooltip_en="3D circle detection",
         node_name_contains="Circle3DDetector",
         filter_keyword="圆检测",
         menu_down_count=2,
-        # 键盘兜底：右键后 Down×2 到「3D 圆检测」（行 0 搜索 / 行 1 分类 / 行 2 工具）
     ),
     FilterToolDef("d3_point_cloud_coarse_registration", "3D 点云粗配准", _CAT_3D_ALGO, 1),
     FilterToolDef("d3_depth_bitmap", "3D 深度位图", _CAT_3D_ALGO, 2, "3D depth bitmap"),
@@ -68,14 +68,14 @@ FILTER_TOOLS: tuple[FilterToolDef, ...] = (
     FilterToolDef("d3_target_search", "3D 目标查找", _CAT_3D_ALGO, 5),
     FilterToolDef("d3_point_cloud_fine_registration", "3D 点云精配准", _CAT_3D_ALGO, 6),
     FilterToolDef("d3_flatness_detection", "3D 平面度检测", _CAT_3D_ALGO, 7),
-    FilterToolDef("d3_height_detection", "3D 高度检测", _CAT_3D_ALGO, 8),
+    FilterToolDef("d3_height_detection", "3D 高度检测", _CAT_3D_ALGO, 8, filter_keyword="高度检测"),
     FilterToolDef("d3_line_detection", "3D 直线检测", _CAT_3D_ALGO, 9),
     FilterToolDef("d3_normal_estimation", "3D 法向估计", _CAT_3D_ALGO, 10),
-    FilterToolDef("d3_plane_fitting", "3D 平面拟合", _CAT_3D_ALGO, 11),
+    FilterToolDef("d3_plane_fitting", "3D 平面拟合", _CAT_3D_ALGO, 11, filter_keyword="平面拟合"),
     FilterToolDef("d3_plane_segmentation", "3D 平面分割", _CAT_3D_ALGO, 12),
     FilterToolDef("d3_point_cloud_transform", "3D 点云变换", _CAT_3D_ALGO, 13),
     FilterToolDef("d3_point_plane_distance", "3D 点面距离", _CAT_3D_ALGO, 14),
-    FilterToolDef("d3_roi_crop_point_cloud", "3D ROI 裁剪点云", _CAT_3D_ALGO, 15),
+    FilterToolDef("d3_roi_crop_point_cloud", "3D ROI 裁剪点云", _CAT_3D_ALGO, 15, filter_keyword="ROI 裁剪"),
     FilterToolDef("d3_roi_transform", "3D ROI 变换", _CAT_3D_ALGO, 16),
     # 顶层
     FilterToolDef("d3_point_cloud_registration", "3D 点云配准", "", 0),
@@ -87,10 +87,23 @@ FILTER_TOOLS: tuple[FilterToolDef, ...] = (
     FilterToolDef("debug_tool", "DebugTool", _CAT_AIRVISION, 0),
     FilterToolDef("plane_segmentation_tool", "PlaneSegmentationTool", _CAT_AIRVISION, 1),
     FilterToolDef("registration_tool", "RegistrationTool", _CAT_AIRVISION, 2),
-    FilterToolDef("result_condition_tool", "ResultConditionTool", _CAT_AIRVISION, 3),
+    FilterToolDef(
+        "result_condition_tool",
+        "ResultConditionTool",
+        _CAT_AIRVISION,
+        3,
+        filter_keyword="ResultCondition",
+        node_name_contains="ResultCondition",
+    ),
     FilterToolDef("template_matching_tool", "TemplateMatchingTool", _CAT_AIRVISION, 4),
     # 可视化
-    FilterToolDef("d3_point_cloud_visualization", "3D 点云可视化", _CAT_VIZ, 0),
+    FilterToolDef(
+        "d3_point_cloud_visualization",
+        "3D 点云可视化",
+        _CAT_VIZ,
+        0,
+        filter_keyword="点云可视化",
+    ),
     FilterToolDef("robot_waypoint_display", "机器人路点显示", _CAT_VIZ, 1),
     # 数据源
     FilterToolDef("d3_data_center", "3D 数据中心", _CAT_DATA, 0),
@@ -103,7 +116,14 @@ FILTER_TOOLS: tuple[FilterToolDef, ...] = (
     # 机器人
     FilterToolDef("robot_pose_transform", "机器人位姿变换", _CAT_ROBOT, 0),
     # 相机
-    FilterToolDef("camera_data_source", "相机数据源", _CAT_CAMERA, 0),
+    FilterToolDef(
+        "camera_data_source",
+        "相机数据源",
+        _CAT_CAMERA,
+        0,
+        filter_keyword="相机数据源",
+        node_name_contains="CameraDataSource",
+    ),
     FilterToolDef("camera_trigger", "相机触发", _CAT_CAMERA, 1),
     # 自定义算法
     FilterToolDef(
@@ -115,7 +135,7 @@ FILTER_TOOLS: tuple[FilterToolDef, ...] = (
         node_name_contains="MoldCup",
     ),
     # 通讯
-    FilterToolDef("communication_send", "通讯发送", _CAT_COMM, 0, "通讯发送工具"),
+    FilterToolDef("communication_send", "通讯发送", _CAT_COMM, 0, filter_keyword="通讯发送"),
 )
 
 assert len(FILTER_TOOLS) == FILTER_TOOL_COUNT
@@ -131,6 +151,7 @@ FILTER_CATEGORIES: tuple[str, ...] = (
     _CAT_ROBOT,
     _CAT_CAMERA,
     _CAT_CUSTOM,
+
     _CAT_COMM,
 )
 

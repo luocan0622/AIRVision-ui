@@ -326,16 +326,21 @@ class BasePage(FileDialogMixin):
         raise TimeoutError(f"菜单项未出现: {kwargs}, last_error={last_error}")
 
     def click_popup_item(self, timeout: int = 5, **kwargs):
-        """点击弹出菜单中的元素（优先 Invoke）。"""
+        """点击弹出菜单中的元素（优先鼠标，避免 Invoke 在部分菜单项上阻塞）。"""
         element = self.find_popup_element(timeout=timeout, **kwargs)
         logger.info(f"点击菜单项: {kwargs}")
         try:
-            element.invoke()
+            self.mouse_click(element)
             time.sleep(0.3)
             return
         except Exception as e:
-            logger.debug(f"菜单项 Invoke 失败，改用鼠标: {e}")
-        self.mouse_click(element)
+            logger.debug(f"菜单项鼠标点击失败，改用 Invoke: {e}")
+        try:
+            element.invoke()
+            time.sleep(0.3)
+        except Exception as e:
+            logger.debug(f"菜单项 Invoke 也失败: {e}")
+            raise
 
     def is_popup_visible(self, **kwargs) -> bool:
         """检查弹出菜单中的元素是否可见。"""

@@ -9,12 +9,24 @@ class DialogTitle:
 
     # ─── Projects ────────────────────────────────────────────────────
     CREATE_NEW_PROJECT = "Create New Project"
-    NEW_PROJECT = "New Project"  # 与 CREATE_NEW_PROJECT 为同一对话框
-    CREATE_NEW_PROJECT_TITLES = (CREATE_NEW_PROJECT, NEW_PROJECT)
+    NEW_PROJECT = "New Project"
+    CREATE_NEW_PROJECT_TITLES = (
+        CREATE_NEW_PROJECT,
+        NEW_PROJECT,
+        "新建项目",
+        "创建新项目",
+    )
     OPEN_PROJECT = "Open Project"
+    OPEN_PROJECT_TITLES = (OPEN_PROJECT, "打开项目")
     SAVE_PROJECT_AS = "Save Project As"  # 另存为项目
     CONFIRM_SAVE_AS = "Confirm Save As"  # 新建/另存为时文件已存在确认
     PROJECT_CREATED_SUCCESS = "Success"  # 新建项目成功提示
+    UNSAVED_CHANGES = "Unsaved Changes"
+    UNSAVED_CHANGES_TITLES = (
+        UNSAVED_CHANGES,
+        "未保存的更改",
+        "未保存更改",
+    )
     SELECT_TEMPLATE_IMAGES = "Select Template Images"  # 设置默认模板主对话框
     SELECT_TEMPLATE_IMAGE = "Select Template Image"    # 选择 Template 图片
     SELECT_DEPTH_IMAGE = "Select Depth Image"          # 选择 Depth 图片

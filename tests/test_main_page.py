@@ -5,17 +5,16 @@ AIRVision 主窗口功能测试。
 """
 import time
 import pytest
-from pywinauto.keyboard import SendKeys
-from pages.main_page import MainPage
+
+from tests import flow_steps as fs
 
 
 class TestMainPageMenuBar:
     """菜单栏按钮基础测试。"""
 
     @pytest.fixture(autouse=True)
-    def setup(self, app):
-        """初始化主页面对象。"""
-        self.page = MainPage(app)
+    def setup(self, page):
+        self.page = page
 
     @pytest.mark.smoke
     def test_title_text(self):
@@ -79,11 +78,8 @@ class TestLanguageSwitch:
     """语言切换测试。"""
 
     @pytest.fixture(autouse=True)
-    def setup(self, app):
-        self.page = MainPage(app)
-        yield
-        SendKeys("{ESC}")
-        time.sleep(0.3)
+    def setup(self, page_esc):
+        self.page = page_esc
 
     @pytest.mark.smoke
     def test_language_button_visible(self):
@@ -106,17 +102,12 @@ class TestLanguageSwitch:
         self.page.toggle_language()
 
 
-
 class TestProjectsMenu:
     """Projects 下拉菜单测试。"""
 
     @pytest.fixture(autouse=True)
-    def setup(self, app):
-        """初始化主页面对象，测试完成后关闭任意弹出菜单。"""
-        self.page = MainPage(app)
-        yield
-        SendKeys("{ESC}")
-        time.sleep(0.3)
+    def setup(self, clean_page_esc):
+        self.page = clean_page_esc
 
     @pytest.mark.regression
     def test_new_project(self):
@@ -139,6 +130,7 @@ class TestProjectsMenu:
     @pytest.mark.regression
     def test_set_default_template_image(self):
         """验证点击 Projects → Set Default Template Image 触发设置默认模板图片。"""
+        self.page.ensure_project_open()
         self.page.set_default_template_image()
         time.sleep(1)
 
@@ -147,19 +139,8 @@ class TestWorkflowCanvasTools:
     """工作流画布：右键 Filter 添加工具。"""
 
     @pytest.fixture(autouse=True)
-    def setup(self, app):
-        self.page = MainPage(app)
-        yield
-        SendKeys("{ESC}")
-        time.sleep(0.3)
-
-    def _prepare_workflow_canvas(self):
-        self.page.mouse_press_key("esc")
-        time.sleep(0.3)
-        self.page.ensure_project_open()
-        time.sleep(0.5)
-        self.page.ensure_workflow_tab_open()
-        time.sleep(0.5)
+    def setup(self, page_esc):
+        self.page = page_esc
 
     def _add_tool_and_assert(self, tool_key: str, message: str):
         tool = self.page.add_workflow_tool(tool_key)
@@ -170,7 +151,7 @@ class TestWorkflowCanvasTools:
     @pytest.mark.regression
     def test_add_d3_circle_detection_tool(self):
         """新建「3D 圆检测」（菜单靠前，可直接点选）。"""
-        self._prepare_workflow_canvas()
+        fs.prepare_workflow_canvas(self.page)
         self._add_tool_and_assert(
             "d3_circle_detection",
             "画布上应出现 3D 圆检测 节点（如 Circle3DDetectorTool3D-01）",
@@ -179,7 +160,7 @@ class TestWorkflowCanvasTools:
     @pytest.mark.regression
     def test_add_mold_cup_path_detection_tool(self):
         """新建「模杯路径检测」（自定义算法，Filter 搜索 + 滚动）。"""
-        self._prepare_workflow_canvas()
+        fs.prepare_workflow_canvas(self.page)
         self._add_tool_and_assert(
             "mold_cup_path_detection",
             "画布上应出现模杯路径检测节点",

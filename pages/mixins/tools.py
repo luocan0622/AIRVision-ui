@@ -1,4 +1,4 @@
-"""Tools 下拉菜单。"""
+﻿"""Tools 下拉菜单。"""
 
 
 class ToolsMixin:

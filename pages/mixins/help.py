@@ -1,4 +1,4 @@
-"""Help 下拉菜单。"""
+﻿"""Help 下拉菜单。"""
 
 
 class HelpMixin:

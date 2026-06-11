@@ -1,11 +1,11 @@
-"""主窗口工具栏（15 个 QToolButton）。
+﻿"""主窗口工具栏（15 个 QToolButton）。
 
 Inspect 中 Name 常为空，需用 AutomationId（Qt objectName）区分；
 若 auto_id 失效，则按工具栏内从左到右的序号（index）或屏幕坐标排序定位。
 """
 from dataclasses import dataclass
 
-from tests.model.locators import TOOLBAR
+from pages.mixins.locators import TOOLBAR
 from utils.logger import logger
 
 

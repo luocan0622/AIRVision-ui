@@ -5,7 +5,6 @@ AIRVision 应用基础测试模块。
 """
 import pytest
 from pages.base_page import BasePage
-from pages.main_page import MainPage
 
 
 class TestAirVisionBasic:
@@ -35,8 +34,8 @@ class TestControlInspection:
     """控件检查测试（用于开发调试）。"""
 
     @pytest.fixture(autouse=True)
-    def setup(self, app):
-        self.page = MainPage(app)
+    def setup(self, page):
+        self.page = page
 
     @pytest.mark.skip(reason="仅用于开发调试，手动运行")
     def test_print_controls(self, app):

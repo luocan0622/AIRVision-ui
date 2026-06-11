@@ -1,13 +1,13 @@
 """
 AIRVision 主窗口页面对象。
 
-业务实现按模块拆分至 tests/model/，本文件通过 Mixin 组合保持对外 API 不变。
+业务实现按模块拆分至 pages/mixins/，本文件通过 Mixin 组合保持对外 API 不变。
 控件定位基于 Inspect.exe / print_control_identifiers() 获取的 AutomationId。
 """
 from pywinauto import Application
 
 from pages.base_page import BasePage
-from tests.model import (
+from pages.mixins import (
     CommonMixin,
     HelpMixin,
     MenuBarMixin,

@@ -15,9 +15,9 @@ logger.remove()
 LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 
-# 控制台输出：INFO 级别，带颜色高亮
+# 控制台输出：INFO 级别（用 stderr，避免与 pytest 捕获 stdout 冲突）
 logger.add(
-    sys.stdout,
+    sys.stderr,
     level="INFO",
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
            "<level>{level: <8}</level> | "

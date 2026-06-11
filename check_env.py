@@ -31,21 +31,24 @@ def check_dependencies():
     """检查依赖包"""
     print("\n检查依赖包...")
     required_packages = [
-        "pytest",
-        "pywinauto",
-        "pyautogui",
-        "yaml",
-        "loguru",
-        "PIL",
+        ("pytest", "pytest"),
+        ("pytest-html", "pytest_html"),
+        ("pywinauto", "pywinauto"),
+        ("pyautogui", "pyautogui"),
+        ("pyperclip", "pyperclip"),
+        ("pywin32", "win32api"),
+        ("PyYAML", "yaml"),
+        ("loguru", "loguru"),
+        ("Pillow", "PIL"),
     ]
     
     all_installed = True
-    for package in required_packages:
+    for display_name, import_name in required_packages:
         try:
-            __import__(package)
-            print(f"  ✓ {package}")
+            __import__(import_name)
+            print(f"  ✓ {display_name}")
         except ImportError:
-            print(f"  ✗ {package} 未安装")
+            print(f"  ✗ {display_name} 未安装")
             all_installed = False
     
     if not all_installed:

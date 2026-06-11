@@ -13,10 +13,13 @@ airvision_pyauto/
 ├── pages/               # 页面对象模型
 │   ├── base_page.py     # 基础页面类
 │   ├── file_dialog.py   # 文件对话框 Mixin
-│   ├── main_page.py     # 主窗口页面
-│   └── dialogs.py       # 对话框标题常量
+│   ├── main_page.py     # 主窗口页面（组合 mixins）
+│   ├── dialogs.py       # 对话框标题常量
+│   └── mixins/          # MainPage 业务 Mixin（Projects、Workflows 等）
 ├── tests/               # 测试用例
-│   ├── conftest.py      # pytest fixtures
+│   ├── conftest.py      # pytest fixtures（page、app 等）
+│   ├── flow_steps.py    # 共享流程步骤函数
+│   ├── model/           # 兼容层（re-export pages.mixins，已弃用）
 │   ├── test_main_page.py       # 单步功能测试
 │   ├── test_full_page.py       # 流程化测试
 │   ├── test_full_workflow.py   # 完整 E2E 测试
@@ -105,14 +108,11 @@ pytest tests/test_main_page.py::TestMainPageMenuBar::test_title_text
 ```
 
 ### 生成 HTML 报告
+
+`pytest.ini` 已默认生成 `reports/report.html`。也可手动指定：
+
 ```bash
 pytest --html=reports/report.html --self-contained-html
-```
-
-### 生成 Allure 报告
-```bash
-pytest --alluredir=reports/allure-results
-allure serve reports/allure-results
 ```
 
 ## 测试标记
@@ -167,12 +167,11 @@ class NewPage(BasePage):
 
 ```python
 import pytest
-from pages.main_page import MainPage
 
 class TestNewFeature:
     @pytest.fixture(autouse=True)
-    def setup(self, app):
-        self.page = MainPage(app)
+    def setup(self, page):
+        self.page = page
     
     @pytest.mark.smoke
     def test_new_feature(self):
@@ -195,7 +194,7 @@ class TestNewFeature:
 
 ### 元素定位失败
 - 使用 Inspect.exe 工具检查控件属性
-- 调整超时时间或重试间隔
+- 增大 `app.timeout` 配置
 - 检查窗口是否获得焦点
 
 ### 测试不稳定

@@ -1,9 +1,9 @@
-"""Projects 菜单与项目文件操作。"""
+﻿"""Projects 菜单与项目文件操作。"""
 import os
 import time
 
 from pages.dialogs import DialogTitle
-from tests.model.locators import (
+from pages.mixins.locators import (
     PROJECT_FILE_RE,
     TEST_PATHS,
     TEST_PROJECT_NAME_PATTERN,
@@ -157,22 +157,40 @@ class ProjectMixin:
         self, path: str = None, filename: str = None, confirm: bool = True
     ) -> str:
         target_path = path or self.PROJECT_PATH
+        os.makedirs(target_path, exist_ok=True)
         target_name = (filename or self.next_test_project_name(target_path)).strip()
         if not self.TEST_PROJECT_NAME_PATTERN.match(target_name):
             raise ValueError(f"项目名须符合 test_数字 规则，实际: {target_name!r}")
 
         logger.info(f"新建项目: path={target_path}, project_name={target_name}")
-        self.click_projects()
-        self.click_popup_item(**self.MENU_NEW_PROJECT)
-        time.sleep(1)
-        self.handle_new_project_dialog(
-            path=target_path,
-            project_name=target_name,
-            confirm=confirm,
-        )
-        self._last_project_name = target_name
-        logger.info(f"已新建项目: {target_name!r}")
-        return target_name
+        self.mouse_press_key("esc")
+        time.sleep(0.2)
+        self.dismiss_unsaved_changes_if_present(timeout=1)
+
+        last_error = None
+        for attempt in range(2):
+            try:
+                self.click_projects()
+                self.click_popup_item(**self.MENU_NEW_PROJECT)
+                time.sleep(2.0)
+                self.handle_new_project_dialog(
+                    path=target_path,
+                    project_name=target_name,
+                    confirm=confirm,
+                )
+                self._last_project_name = target_name
+                logger.info(f"已新建项目: {target_name!r}")
+                return target_name
+            except (TimeoutError, RuntimeError) as e:
+                last_error = e
+                logger.warning(
+                    f"新建项目失败 (尝试 {attempt + 1}/2): {e}"
+                )
+                self.cancel_new_project_dialog(timeout=1)
+                self.mouse_press_key("esc")
+                time.sleep(0.5)
+
+        raise last_error or RuntimeError("新建项目失败")
 
     def open_project(self, path: str = None, filename: str = None, confirm: bool = True):
         target_path = path or self.PROJECT_PATH
@@ -267,7 +285,14 @@ class ProjectMixin:
             )
         self._after_task()
 
-    def close_project(self):
+    def close_project(self, save_changes: bool = True):
+        """关闭当前项目。
+
+        有未保存更改时弹出 Unsaved Changes：save_changes=True 点 Save，False 点 Discard。
+        无更改时仅需确认 OK。
+        """
+        logger.info(f"关闭项目 (save_changes={save_changes})")
         self.click_projects()
         self.click_popup_item(**self.MENU_CLOSE_PROJECT)
-        self._after_task()
+        time.sleep(0.5)
+        self._handle_close_confirm_dialogs(save_changes=save_changes)

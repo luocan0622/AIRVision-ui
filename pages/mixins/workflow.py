@@ -1,10 +1,10 @@
-"""Workflows 菜单与工作流文件操作。"""
+﻿"""Workflows 菜单与工作流文件操作。"""
 import os
 import time
 
 from pages.dialogs import DialogTitle
-from tests.model.filter_menu import FilterMenuMixin
-from tests.model.locators import (
+from pages.mixins.workflow_pipeline import WorkflowPipelineMixin
+from pages.mixins.locators import (
     TEST_WORKFLOW_NAME_PATTERN,
     WORKFLOW_FILE_EXT,
     WORKFLOW_NAME_PATTERN,
@@ -13,15 +13,17 @@ from utils.logger import logger
 from utils.naming import collect_numbers_from_filenames, next_test_name, parse_test_number
 
 
-class WorkflowMixin(FilterMenuMixin):
+class WorkflowMixin(WorkflowPipelineMixin):
     """Workflows：新建 / 保存 / 打开 / 重命名；画布添加工具见 FilterMenuMixin。"""
 
     WORKFLOWS_NEW = {"title": "New", "control_type": "MenuItem"}
     WORKFLOWS_OPEN = {"title": "Open", "control_type": "MenuItem"}
     WORKFLOWS_SAVE = {"title": "Save", "control_type": "MenuItem"}
     WORKFLOWS_CLEAR = {"title": "Clear", "control_type": "MenuItem"}
-    WORKFLOWS_CLOSE = {"title": "Close", "control_type": "MenuItem"}
     WORKFLOWS_RENAME = {"title": "Rename", "control_type": "MenuItem"}
+
+    # 工作流标签右侧关闭按钮（小方块）相对标签右边缘的内缩像素
+    _WORKFLOW_TAB_CLOSE_INSET_X = 8
 
     WORKFLOW_NAME_PATTERN = WORKFLOW_NAME_PATTERN
     TEST_WORKFLOW_NAME_PATTERN = TEST_WORKFLOW_NAME_PATTERN
@@ -63,6 +65,99 @@ class WorkflowMixin(FilterMenuMixin):
         if candidates:
             return candidates[-1]
         raise RuntimeError("未找到当前工作流名称")
+
+    def _find_workflow_tab(self, workflow_name: str):
+        """按名称定位工作流 TabItem。"""
+        matches = []
+        try:
+            for elem in self.window.descendants(control_type="TabItem"):
+                try:
+                    name = (elem.window_text() or "").strip()
+                except Exception:
+                    continue
+                if name == workflow_name:
+                    matches.append(elem)
+        except Exception as e:
+            logger.debug(f"扫描工作流 TabItem 失败: {e}")
+
+        if not matches:
+            raise RuntimeError(f"未找到工作流标签: {workflow_name!r}")
+        return matches[-1]
+
+    def _find_workflow_tab_close_button(self, tab):
+        """查找标签右侧的关闭按钮（优先 UIA 控件，失败则返回 None 走坐标兜底）。"""
+        tab_rect = tab.rectangle()
+        y_mid = tab_rect.top + tab_rect.height() // 2
+        best = None
+        best_left = -1
+
+        search_roots = [tab]
+        try:
+            for elem in self.window.descendants(class_name="QTabBar"):
+                if elem.is_visible():
+                    search_roots.append(elem)
+                    break
+        except Exception as e:
+            logger.debug(f"查找 QTabBar 失败: {e}")
+
+        seen = set()
+        for root in search_roots:
+            for kwargs in (
+                {"control_type": "Button"},
+                {"class_name": "QToolButton"},
+            ):
+                try:
+                    for btn in root.descendants(**kwargs):
+                        try:
+                            handle = btn.handle
+                            if handle in seen or not btn.is_visible():
+                                continue
+                            seen.add(handle)
+                            rect = btn.rectangle()
+                            if rect.width() > 28 or rect.height() > 28:
+                                continue
+                            btn_y = rect.top + rect.height() // 2
+                            if abs(btn_y - y_mid) > max(tab_rect.height(), rect.height()):
+                                continue
+                            if not (
+                                tab_rect.left - 4
+                                <= rect.left
+                                <= tab_rect.right + 24
+                            ):
+                                continue
+                            if rect.left > best_left:
+                                best = btn
+                                best_left = rect.left
+                        except Exception:
+                            continue
+                except Exception as e:
+                    logger.debug(f"扫描标签关闭按钮失败: {e}")
+
+        return best
+
+    def _click_workflow_tab_close_button(self, workflow_name: str = None) -> str:
+        """点击工作流标签旁的关闭按钮。"""
+        name = (workflow_name or self.get_active_workflow_name()).strip()
+        tab = self._find_workflow_tab(name)
+        close_btn = self._find_workflow_tab_close_button(tab)
+
+        if close_btn is not None:
+            logger.info(
+                f"点击工作流标签关闭按钮: {name!r} "
+                f"({close_btn.window_text()!r})"
+            )
+            self.mouse_click(close_btn)
+            return name
+
+        rect = tab.rectangle()
+        close_x = rect.right - self._WORKFLOW_TAB_CLOSE_INSET_X
+        close_y = rect.top + rect.height() // 2
+        logger.info(
+            f"点击工作流标签关闭区域: {name!r} @ ({close_x}, {close_y}), "
+            f"tab_rect={rect}"
+        )
+        self.click_by_position(close_x, close_y)
+        return name
 
     @staticmethod
     def _workflow_save_filename(workflow_name: str) -> str:
@@ -167,9 +262,20 @@ class WorkflowMixin(FilterMenuMixin):
         self._after_task()
         return workflow_name
 
-    def close_workflow(self):
-        self.click_workflows()
-        self.click_popup_item(**self.WORKFLOWS_CLOSE)
+    def close_workflow(
+        self, workflow_name: str = None, save_changes: bool = True
+    ):
+        """点击工作流标签右侧关闭按钮关闭标签。
+
+        有未保存更改时点 Save；无更改时确认 OK。
+        """
+        closed_name = self._click_workflow_tab_close_button(workflow_name)
+        logger.info(
+            f"已触发关闭工作流标签: {closed_name!r} "
+            f"(save_changes={save_changes})"
+        )
+        time.sleep(0.5)
+        self._handle_close_confirm_dialogs(save_changes=save_changes)
 
     def clear_workflow(self):
         logger.info("清空工作流")

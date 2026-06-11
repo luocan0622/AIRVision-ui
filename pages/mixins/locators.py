@@ -1,4 +1,4 @@
-"""MainPage 公共定位器前缀与配置路径。"""
+﻿"""MainPage 公共定位器前缀与配置路径。"""
 import re
 
 from utils.config import get_test_paths
@@ -17,13 +17,18 @@ WORKFLOW_CANVAS_CLASS_NAMES = (
 WORKFLOW_CANVAS_MIN_WIDTH = 200
 WORKFLOW_CANVAS_MIN_HEIGHT = 200
 
-# 画布右键 Filter 菜单（Inspect: 独立 QMenu 弹出窗，锚在右键点附近）
+# 画布右键 Filter 菜单（Inspect / UIA 实测）：
+# - 独立顶层 QMenu（class_name=QMenu，典型尺寸约 266×430）
+# - 仅暴露 2 个 QWidgetAction（MenuItem）：
+#     ① y≈610, h≈24  — Filter 搜索框
+#     ② y≈634, h≈400 — 内含 QTreeView，各工具项无独立 UIA 节点
+# - 单个工具行无法通过 descendants 枚举，需 Filter 搜索 / 坐标行高 / 键盘 Down
 FILTER_MENU_ITEM_CLASS = "QWidgetAction"
 FILTER_MENU_ROW_MIN_HEIGHT = 8
 FILTER_MENU_ROW_MAX_HEIGHT = 120
-FILTER_MENU_LINE_HEIGHT = 28
+FILTER_MENU_LINE_HEIGHT = 28   # 树内工具行近似高度（搜索框实测 h≈24）
 FILTER_MENU_ROW_Y_PAD = 14
-FILTER_MENU_FIRST_TOOL_LINE = 2
+FILTER_MENU_FIRST_TOOL_LINE = 2  # 行0=搜索，行1=分类「3D 算法」，行2=首个工具
 # QMenu 视口内保留底部边距，避免点到最后一条被裁切
 FILTER_MENU_VIEWPORT_BOTTOM_MARGIN = 2
 
