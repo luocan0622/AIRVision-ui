@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "robot": "ABB IRB 4400/L30 M2000",
+    "description": "TCP pose in reference frame from robot simulation panel",
+    "unit_position": "mm",
+    "orientation_in_points": "quaternion [x, y, z, qx, qy, qz, qw]",
+    "source_euler_zyx_deg": {
+      "Rz": 89.348,
+      "Ry": 22.079,
+      "Rx": 147.983
+    },
+    "joints_deg": [4.79, 21.51, -4.71, -24.04, 64.45, -266.40]
+  },
+  "points": {
+    "tcp_pose": [
+      [1956.498, 112.331, 1660.861, 0.633766, 0.700855, 0.059417, 0.321891]
+    ]
+  }
+}

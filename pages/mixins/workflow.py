@@ -193,7 +193,7 @@ class WorkflowMixin(WorkflowPipelineMixin):
         time.sleep(0.8)
         name = self.get_active_workflow_name()
         logger.info(f"已新建工作流: {name}")
-        self._after_task()
+        self.finish_task()
         return name
 
     def save_workflow(self, workflow_name: str = None, confirm: bool = True):
@@ -222,7 +222,7 @@ class WorkflowMixin(WorkflowPipelineMixin):
                 )
             else:
                 logger.info(f"工作流 {name!r} 已保存，直接覆盖，未打开保存对话框")
-            self._after_task()
+            self.finish_task()
             return
 
         self.handle_file_dialog(
@@ -231,7 +231,7 @@ class WorkflowMixin(WorkflowPipelineMixin):
             filename=filename,
             confirm=confirm,
         )
-        self._after_task()
+        self.finish_task()
 
     def open_workflow(
         self,
@@ -259,7 +259,7 @@ class WorkflowMixin(WorkflowPipelineMixin):
         time.sleep(0.5)
         workflow_name = os.path.splitext(target_file)[0]
         logger.info(f"已打开工作流: {workflow_name!r}")
-        self._after_task()
+        self.finish_task()
         return workflow_name
 
     def close_workflow(
@@ -359,5 +359,5 @@ class WorkflowMixin(WorkflowPipelineMixin):
                 f"重命名后标签名与预期不一致: expected={name!r}, actual={active!r}"
             )
         logger.info(f"工作流已重命名为: {active!r}")
-        self._after_task()
+        self.finish_task()
         return name

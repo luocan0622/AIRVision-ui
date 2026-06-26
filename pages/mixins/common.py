@@ -7,9 +7,13 @@ from utils.logger import logger
 class CommonMixin:
     """任务结束 OK 处理、全流程前置清理。"""
 
-    def _after_task(self):
+    def finish_task(self) -> None:
         """每个任务结束后：有 OK 就点 OK，没有则等待 1 秒。"""
         self.dismiss_ok_or_wait(wait_if_absent=1.0)
+
+    def _after_task(self) -> None:
+        """兼容旧调用，请改用 finish_task()。"""
+        self.finish_task()
 
     def _is_project_open(self) -> bool:
         try:

@@ -3,6 +3,7 @@ import os
 import re
 
 TEST_NUMBER_PATTERN = re.compile(r"^test_(\d+)$", re.I)
+NUMBERED_LABEL_PATTERN = re.compile(r"^(.+?)\s+(\d+)$", re.I)
 
 
 def parse_test_number(name: str) -> int | None:
@@ -45,3 +46,25 @@ def collect_numbers_from_filenames(
                 numbers.append(num)
 
     return numbers
+
+
+def next_numbered_label(
+    prefix: str,
+    existing_names: list[str],
+    *,
+    separator: str = " ",
+) -> str:
+    """根据已有名称生成 ``{prefix}{separator}数字``（如 ``TCP Client 2``）。"""
+    prefix_norm = prefix.strip()
+    prefix_lower = prefix_norm.lower()
+    numbers: list[int] = []
+
+    for raw in existing_names:
+        name = raw.strip()
+        if not name:
+            continue
+        match = NUMBERED_LABEL_PATTERN.match(name)
+        if match and match.group(1).strip().lower() == prefix_lower:
+            numbers.append(int(match.group(2)))
+
+    return f"{prefix_norm}{separator}{max(numbers, default=0) + 1}"

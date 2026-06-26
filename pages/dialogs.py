@@ -36,3 +36,11 @@ class DialogTitle:
     SAVE_WORKFLOW = "Save Workflow"
     SAVE_WORKFLOW_AS = "Save Workflow As"
     RENAME_WORKFLOW = "Rename Workflow"
+
+    # ─── Communication ───────────────────────────────────────────────
+    COMMUNICATION = "Communication"
+    COMMUNICATION_TITLES = (COMMUNICATION, "通信")
+    ADD_DEVICE = "Add Device"
+    ADD_DEVICE_TITLES = (ADD_DEVICE, "添加设备")
+    CONNECTION_FAILED = "Connection Failed"
+    CONNECTION_FAILED_TITLES = (CONNECTION_FAILED, "连接失败")

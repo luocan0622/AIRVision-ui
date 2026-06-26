@@ -12,11 +12,7 @@ from pages.mixins.workflow_layout import (
     NodePlacement,
     WorkflowLayoutEngine,
 )
-from pages.mixins.workflow_pipelines import (
-    EXTENDED_DETECTION_PIPELINE,
-    WorkflowPipelineDef,
-    get_pipeline,
-)
+from pages.mixins.workflow_types import PipelineRunResult
 from utils.logger import logger
 
 
@@ -32,7 +28,7 @@ class WorkflowPipelineMixin(WorkflowBuilderMixin, FilterMenuMixin):
         node_timeout: int = 20,
         pause_between: float = 1.0,
         fresh_workflow: bool = True,
-    ) -> LayoutPlan:
+    ) -> PipelineRunResult:
         """① 新建空白工作流 ② 适配缩放 ③ 链式放置 ④ 可选连线。"""
         keys = tuple(tool_keys)
         self.clear_workflow_node_positions()
@@ -44,14 +40,15 @@ class WorkflowPipelineMixin(WorkflowBuilderMixin, FilterMenuMixin):
             time.sleep(0.6)
             self._canvas_zoom = 1.0
 
-        _zoom, plan = self.prepare_canvas_for_tools(keys)
-        self.log_layout_plan(plan)
+        _zoom, metrics = self.prepare_canvas_for_tools(keys)
+        self.log_layout_plan(metrics)
 
-        chain_step = plan.v_gap or WorkflowLayoutEngine.MIN_CENTER_STEP
+        chain_step = metrics.v_gap or WorkflowLayoutEngine.MIN_CENTER_STEP
         _, rect = self.get_canvas_rect()
         origin_x, origin_y = self._canvas_node_origin(rect)
         last_x: int | None = None
         last_y: int | None = None
+        actual_placements: list[NodePlacement] = []
 
         for i, key in enumerate(keys):
             defn = get_filter_tool(key)
@@ -76,6 +73,7 @@ class WorkflowPipelineMixin(WorkflowBuilderMixin, FilterMenuMixin):
                 y=py,
                 row=i,
             )
+            actual_placements.append(placement)
             self.add_workflow_tool_from_placement(
                 placement,
                 timeout=10,
@@ -90,33 +88,18 @@ class WorkflowPipelineMixin(WorkflowBuilderMixin, FilterMenuMixin):
                 ), f"画布上应出现 {defn.display_name!r} 节点"
             time.sleep(pause_between)
 
+        connections = 0
         if connect and len(keys) > 1:
-            linked = self.connect_workflow_pipeline(keys)
-            logger.info(f"已完成 {linked} 条顺序连线")
+            connections = self.connect_workflow_pipeline(keys)
+            logger.info(f"已完成 {connections} 条顺序连线")
 
-        return plan
-
-    def build_named_pipeline(
-        self,
-        pipeline_name: str,
-        *,
-        verify_nodes: bool = True,
-    ) -> LayoutPlan:
-        """搭建预注册流程（如圆形工件检测）。"""
-        pipeline = get_pipeline(pipeline_name)
-        logger.info(f"搭建流程: {pipeline.name} — {pipeline.description}")
-        return self.build_workflow_pipeline(
-            pipeline.tool_keys,
-            connect=pipeline.connect_sequential,
-            verify_nodes=verify_nodes,
+        _, rect = self.get_canvas_rect()
+        plan = LayoutPlan(
+            placements=tuple(actual_placements),
+            v_gap=chain_step,
+            canvas_width=rect.width(),
+            canvas_height=rect.height(),
+            zoom_factor=self.get_canvas_zoom(),
+            fits_canvas=metrics.fits_canvas,
         )
-
-    def build_extended_detection_pipeline(
-        self, *, verify_nodes: bool = True
-    ) -> LayoutPlan:
-        """扩展 8 工具检测链。"""
-        return self.build_workflow_pipeline(
-            EXTENDED_DETECTION_PIPELINE.tool_keys,
-            connect=False,
-            verify_nodes=verify_nodes,
-        )
+        return PipelineRunResult(plan=plan, connections=connections)

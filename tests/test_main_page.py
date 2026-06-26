@@ -7,6 +7,7 @@ import time
 import pytest
 
 from tests import flow_steps as fs
+from tests.support.helpers import add_tool_and_assert
 
 
 class TestMainPageMenuBar:
@@ -143,10 +144,7 @@ class TestWorkflowCanvasTools:
         self.page = page_esc
 
     def _add_tool_and_assert(self, tool_key: str, message: str):
-        tool = self.page.add_workflow_tool(tool_key)
-        assert tool.key == tool_key
-        assert self.page.has_workflow_tool_node_for_key(tool_key, timeout=15), message
-        time.sleep(0.5)
+        add_tool_and_assert(self.page, tool_key, message=message)
 
     @pytest.mark.regression
     def test_add_d3_circle_detection_tool(self):

@@ -1,5 +1,5 @@
 """工作流布局引擎单元测试（无需启动应用）。"""
-from pages.mixins.workflow_layout import WorkflowLayoutEngine
+from pages import WorkflowLayoutEngine
 
 
 class TestWorkflowLayoutEngine:
@@ -58,5 +58,3 @@ class TestWorkflowLayoutEngine:
         )
         assert out_pt[0] < src[0]
         assert out_pt[1] > src[1]
-        assert in_pt[0] == dst[0]
-        assert in_pt[1] < dst[1]

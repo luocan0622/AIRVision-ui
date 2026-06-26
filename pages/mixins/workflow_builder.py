@@ -1,29 +1,17 @@
 """VisionMaster 式工作流搭建器：视口缩放 → 链式放置 → 顺序连线。"""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Sequence
 
 from pages.mixins.workflow_layout import LayoutPlan
 from pages.mixins.workflow_pipelines import (
     CIRCLE_WORKPIECE_DETECTION,
+    EXTENDED_DETECTION_PIPELINE,
     WorkflowPipelineDef,
     get_pipeline,
 )
+from pages.mixins.workflow_types import WorkflowBuildResult
 from utils.logger import logger
-
-
-@dataclass(frozen=True)
-class WorkflowBuildResult:
-    """一次完整流水线搭建的结果。"""
-
-    plan: LayoutPlan
-    connections: int
-    pipeline: WorkflowPipelineDef | None = None
-
-    @property
-    def node_count(self) -> int:
-        return self.plan.node_count
 
 
 class WorkflowBuilderMixin:
@@ -52,7 +40,7 @@ class WorkflowBuilderMixin:
             f"搭建检测流程: {pipeline_def.name} — {pipeline_def.description}"
         )
 
-        plan = self.build_workflow_pipeline(
+        run = self.build_workflow_pipeline(
             pipeline_def.tool_keys,
             connect=do_connect,
             verify_nodes=verify_nodes,
@@ -60,13 +48,14 @@ class WorkflowBuilderMixin:
             node_timeout=node_timeout,
             pause_between=pause_between,
         )
-        connections = max(0, plan.node_count - 1) if do_connect else 0
         if do_connect:
-            logger.info(f"流程 {pipeline_def.name!r} 已完成 {connections} 条连线")
+            logger.info(
+                f"流程 {pipeline_def.name!r} 已完成 {run.connections} 条连线"
+            )
 
         return WorkflowBuildResult(
-            plan=plan,
-            connections=connections,
+            plan=run.plan,
+            connections=run.connections,
             pipeline=pipeline_def,
         )
 
@@ -80,6 +69,16 @@ class WorkflowBuilderMixin:
         return self.build_detection_workflow(
             CIRCLE_WORKPIECE_DETECTION,
             connect=connect,
+            verify_nodes=verify_nodes,
+        )
+
+    def build_extended_detection_pipeline(
+        self, *, verify_nodes: bool = True
+    ) -> WorkflowBuildResult:
+        """扩展 8 工具检测链。"""
+        return self.build_detection_workflow(
+            EXTENDED_DETECTION_PIPELINE,
+            connect=False,
             verify_nodes=verify_nodes,
         )
 

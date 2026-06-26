@@ -3,16 +3,15 @@
 
 视口槽位布局 → 批量放置工具（连线暂不测）。
 """
-import time
-
 import pytest
 
-from pages.mixins.workflow_layout import WorkflowLayoutEngine
+from pages import WorkflowLayoutEngine
 from pages.mixins.workflow_pipelines import (
     CIRCLE_WORKPIECE_DETECTION,
     EXTENDED_DETECTION_PIPELINE,
 )
 from tests import flow_steps as fs
+from tests.support.helpers import preview_pipeline_on_canvas
 from utils.logger import logger
 
 
@@ -33,17 +32,7 @@ class TestCircleWorkpieceWorkflow:
         keys = CIRCLE_WORKPIECE_DETECTION.tool_keys
 
         def _preview_layout():
-            _, rect = self.page.get_canvas_rect()
-            preview = self.page.preview_pipeline_layout(
-                keys,
-                canvas_width=rect.width(),
-                canvas_height=rect.height(),
-            )
-            logger.info(
-                f"布局预览: 画布={rect.width()}x{rect.height()}px, "
-                f"缩放={preview.get('target_zoom', 1):.0%}, "
-                f"步长={preview.get('screen_step_px')}px"
-            )
+            preview, rect = preview_pipeline_on_canvas(self.page, keys)
             assert preview.get("target_zoom", 1) >= 0.98, "4 节点在视口内应保持 100% 缩放"
             return preview, rect
 
@@ -89,16 +78,8 @@ class TestCircleWorkpieceWorkflow:
         keys = EXTENDED_DETECTION_PIPELINE.tool_keys
 
         def _preview_layout():
-            _, rect = self.page.get_canvas_rect()
-            preview = self.page.preview_pipeline_layout(
-                keys,
-                canvas_width=rect.width(),
-                canvas_height=rect.height(),
-            )
-            logger.info(
-                f"[8工具] 画布={rect.width()}x{rect.height()}px, "
-                f"缩放={preview.get('target_zoom', 1):.0%}, "
-                f"步长={preview.get('screen_step_px')}px"
+            preview, _rect = preview_pipeline_on_canvas(
+                self.page, keys, log_prefix="[8工具]"
             )
             assert preview.get("target_zoom", 1) >= WorkflowLayoutEngine.MIN_ZOOM
             return preview
@@ -111,15 +92,16 @@ class TestCircleWorkpieceWorkflow:
         )
 
         def _build_and_verify():
-            plan = self.page.build_extended_detection_pipeline(verify_nodes=True)
-            assert plan.node_count == len(keys)
+            result = self.page.build_extended_detection_pipeline(verify_nodes=True)
+            plan = result.plan
+            assert result.node_count == len(keys)
             assert plan.fits_canvas
             assert plan.zoom_factor >= WorkflowLayoutEngine.MIN_ZOOM
             ys = [p.y for p in plan.placements]
             steps = [ys[i + 1] - ys[i] for i in range(len(ys) - 1)]
             assert len(set(steps)) == 1
             assert min(steps) >= 50, f"8 工具步长应紧凑: {steps}"
-            return plan
+            return result
 
         fs.run_step(
             "搭建并验证 8 工具检测流程",

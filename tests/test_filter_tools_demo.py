@@ -10,6 +10,7 @@ import pytest
 
 from pages.mixins.filter import FILTER_TOOLS, get_filter_tool
 from tests import flow_steps as fs
+from tests.support.helpers import add_tool_and_assert
 from utils.logger import logger
 
 # 固定种子便于复现；环境变量 FILTER_DEMO_SEED=0 则每次随机不同
@@ -36,12 +37,7 @@ class TestFilterToolsDemo:
     def _add_and_assert(self, tool_key: str) -> None:
         defn = get_filter_tool(tool_key)
         logger.info(f"Demo 添加工具: {tool_key!r} ({defn.display_name!r})")
-        tool = self.page.add_workflow_tool(tool_key)
-        assert tool.key == tool_key
-        assert self.page.has_workflow_tool_node_for_key(
-            tool_key, timeout=20
-        ), f"画布上应出现 {defn.display_name!r} 节点"
-        time.sleep(0.8)
+        add_tool_and_assert(self.page, tool_key, timeout=20)
 
     @pytest.mark.demo
     @pytest.mark.slow

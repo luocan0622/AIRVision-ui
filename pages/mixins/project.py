@@ -212,14 +212,14 @@ class ProjectMixin:
             filename=target_name,
             confirm=confirm,
         )
-        self._after_task()
+        self.finish_task()
         stem = os.path.splitext(target_name)[0]
         self._last_project_name = stem
 
     def save_project(self):
         self.click_projects()
         self.click_popup_item(**self.MENU_SAVE_PROJECT)
-        self._after_task()
+        self.finish_task()
 
     def save_project_as(self, path: str = None, filename: str = None, confirm: bool = True):
         target_path = path or self.SAVE_AS_PROJECT_PATH
@@ -235,7 +235,7 @@ class ProjectMixin:
             filename=target_name,
             confirm=confirm,
         )
-        self._after_task()
+        self.finish_task()
 
     def set_default_template_image(
         self,
@@ -283,7 +283,7 @@ class ProjectMixin:
                 timeout=10,
                 **self.BTN_TEMPLATE_DIALOG_OK,
             )
-        self._after_task()
+        self.finish_task()
 
     def close_project(self, save_changes: bool = True):
         """关闭当前项目。

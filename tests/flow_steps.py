@@ -42,21 +42,6 @@ def run_step(
     return execute_step(title, action, func, args=args, pause=pause)
 
 
-def _run(
-    title: str,
-    action: str,
-    func: Callable[[], T],
-    *,
-    step: Optional[int] = None,
-    total: Optional[int] = None,
-    args: Optional[dict[str, Any]] = None,
-    pause: float = 0,
-) -> T:
-    return run_step(
-        title, action, func, step=step, total=total, args=args, pause=pause
-    )
-
-
 def assert_app_ready(page: MainPage) -> None:
     window = page.app.top_window()
     assert window.exists(), "应用窗口应存在"
@@ -81,7 +66,7 @@ def prepare_workflow_canvas(page: MainPage) -> None:
         page.ensure_workflow_tab_open()
         time.sleep(0.5)
 
-    _run("准备工作流画布", "prepare_workflow_canvas", _do)
+    run_step("准备工作流画布", "prepare_workflow_canvas", _do)
 
 
 def step_new_project(
@@ -98,7 +83,7 @@ def step_new_project(
         assert os.path.isfile(project_file), f"项目文件应存在: {project_file}"
         return project_name, project_file
 
-    return _run("新建项目", "new_project", _do, step=step, total=total, pause=pause)
+    return run_step("新建项目", "new_project", _do, step=step, total=total, pause=pause)
 
 
 def step_set_default_template(
@@ -108,7 +93,7 @@ def step_set_default_template(
     total: Optional[int] = None,
     pause: float = 1.0,
 ) -> None:
-    _run(
+    run_step(
         "设置默认模板图片",
         "set_default_template_image",
         lambda: page.set_default_template_image(),
@@ -130,7 +115,7 @@ def step_save_project(
         page.save_project()
         assert os.path.isfile(project_file), f"项目文件应存在: {project_file}"
 
-    _run(
+    run_step(
         "保存项目",
         "save_project",
         _do,
@@ -149,7 +134,7 @@ def step_close_project(
     total: Optional[int] = None,
     pause: float = 1.0,
 ) -> None:
-    _run(
+    run_step(
         "关闭项目",
         "close_project",
         lambda: page.close_project(save_changes=save_changes),
@@ -178,7 +163,7 @@ def step_open_project(
     def _do() -> None:
         page.open_project(**kwargs)
 
-    _run(
+    run_step(
         display,
         "open_project",
         _do,
@@ -201,7 +186,9 @@ def step_new_workflow(
         assert re.match(r"^Untitled-\d+$", initial_name, re.I)
         return initial_name
 
-    return _run("新建 workflow", "new_workflow", _do, step=step, total=total, pause=pause)
+    return run_step(
+        "新建 workflow", "new_workflow", _do, step=step, total=total, pause=pause
+    )
 
 
 def step_rename_workflow(
@@ -216,7 +203,7 @@ def step_rename_workflow(
         assert page.get_active_workflow_name() == workflow_name
         return workflow_name
 
-    return _run(
+    return run_step(
         "重命名 workflow", "rename_workflow", _do, step=step, total=total
     )
 
@@ -238,7 +225,7 @@ def step_add_filter_tool(
         ), f"画布上应出现 {tool_key} 工具节点"
         return tool
 
-    return _run(
+    return run_step(
         f"Filter 添加工具 ({tool_key})",
         "add_filter_tool",
         _do,
@@ -263,7 +250,7 @@ def step_save_workflow(
         assert os.path.isfile(json_path), f"工作流文件应存在: {json_path}"
         return json_path
 
-    return _run(
+    return run_step(
         "保存 workflow",
         "save_workflow",
         _do,
@@ -295,9 +282,9 @@ def step_close_workflow(
             workflow_name=workflow_name, save_changes=save_changes
         )
         if after_task:
-            page._after_task()
+            page.finish_task()
 
-    _run(
+    run_step(
         title,
         "close_workflow",
         _do,
@@ -330,7 +317,7 @@ def step_save_project_as(
         assert os.path.isfile(save_as_file), f"另存为项目文件应存在: {save_as_file}"
         return save_as_name, save_as_file
 
-    return _run(
+    return run_step(
         "另存为项目 (Save Project As)",
         "save_project_as",
         _do,
@@ -349,7 +336,7 @@ def step_build_circle_workpiece_pipeline(page: MainPage, *, verify: bool = True)
             connect=False, verify_nodes=verify
         )
 
-    return _run(
+    return run_step(
         "搭建圆形工件检测流程",
         "build_circle_workpiece_detection",
         _do,
@@ -370,8 +357,8 @@ def step_build_workflow_pipeline(
             tool_keys, connect=connect, verify_nodes=verify
         )
 
-    return _run(
-        f"搭建流水线",
+    return run_step(
+        "搭建流水线",
         "build_workflow_pipeline",
         _do,
         args={"tool_keys": tool_keys, "connect": connect, "verify": verify},
@@ -401,7 +388,7 @@ def step_open_workflow(
             assert page.get_active_workflow_name() == expected_name
         return opened_name
 
-    return _run(
+    return run_step(
         display,
         "open_workflow",
         _do,
