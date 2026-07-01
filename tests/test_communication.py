@@ -1,9 +1,15 @@
 """Communication 设备管理测试。"""
+import os
 import time
 
 import pytest
 
 from pages.mixins.communication import COMMUNICATION_DEVICE_TYPES
+
+
+TCP_CLIENT_HOST = os.getenv("AIRVISION_TCP_CLIENT_HOST", "127.0.0.1")
+TCP_CLIENT_PORT = int(os.getenv("AIRVISION_TCP_CLIENT_PORT", "8081"))
+TCP_CLIENT_PAYLOAD = os.getenv("AIRVISION_TCP_CLIENT_PAYLOAD", "AIRVISION_SIGNAL_001")
 
 
 class TestCommunication:
@@ -45,4 +51,50 @@ class TestCommunication:
         self.page.open_communication()
         name = self.page.add_communication_device(device_type=device_type)
         assert device_type.lower() in name.lower()
+        self.page.close_communication()
+
+    @pytest.mark.regression
+    def test_tcp_client_config_connect_test_send_receive(self):
+        """TCP Client: configure IP/port, apply, connect, test, send, receive."""
+        host = TCP_CLIENT_HOST
+        port = TCP_CLIENT_PORT
+        payload = TCP_CLIENT_PAYLOAD
+
+        self.page.close_connection_failed_dialog()
+        self.page.open_communication()
+        name = self.page.add_communication_device(device_type="TCP Client")
+        self.page.select_communication_device(name)
+        self.page.configure_communication_device(
+            ip_address=host,
+            port=port,
+        )
+        self.page.connect_communication_device()
+        self.page.open_communication_debug()
+        self.page.send_communication_debug_data(payload)
+
+        received = self.page.read_communication_receive_data()
+        assert isinstance(received, str)
+
+        self.page.close_communication_debug()
+        self.page.close_communication()
+
+    @pytest.mark.regression
+    def test_configure_event_for_tcp_client_device(self):
+        """Communication Event: name, source, device, delimiter, rule, value."""
+        self.page.close_event_management_dialog()
+        self.page.open_communication()
+        self.page.open_communication_device_tab()
+        device_name = self.page.add_communication_device(device_type="TCP Client")
+
+        event_name = f"Auto Event {int(time.time())}"
+        self.page.configure_communication_event(
+            event_name=event_name,
+            event_source="IO",
+            device_name=device_name,
+            delimiter=",",
+            value_type="String",
+            match_rule="Equal",
+            condition_value="AIRVISION_SIGNAL_001",
+        )
+
         self.page.close_communication()

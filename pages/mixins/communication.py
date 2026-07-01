@@ -15,12 +15,16 @@ COMMUNICATION_DEVICE_TYPES: tuple[str, ...] = (
     "TCP Client",
     "TCP Server",
     "Serial Device",
-    "Modbus TCP",
-    "Modbus RTU",
-    "PLC Link",
+   # "Modbus TCP",
+    #"Modbus RTU",
+    #"PLC Link",
 )
 
 _DEFAULT_DEVICE_TYPE = COMMUNICATION_DEVICE_TYPES[0]
+
+
+def _normalize_communication_text(text: str) -> str:
+    return "".join(text.split()).lower()
 
 
 class CommunicationMixin:
@@ -113,11 +117,76 @@ class CommunicationMixin:
         time.sleep(0.5)
 
         updated = self.list_communication_devices()
+        expected_name = _normalize_communication_text(name)
         assert any(
-            n.strip().lower() == name.strip().lower() for n in updated
+            _normalize_communication_text(n) == expected_name for n in updated
         ), f"设备列表中应出现 {name!r}，当前: {updated}"
         logger.info(f"Communication 设备已添加: {name!r}")
         return name
+
+    def select_communication_device(self, device_name: str) -> None:
+        comm_win = self.open_communication()
+        target = _normalize_communication_text(device_name)
+
+        for elem in comm_win.descendants():
+            try:
+                if not elem.is_visible():
+                    continue
+                text = (elem.window_text() or "").strip()
+                if _normalize_communication_text(text) == target:
+                    logger.info(f"Select Communication device: {device_name!r}")
+                    self.mouse_click(elem)
+                    time.sleep(0.3)
+                    return
+            except Exception:
+                continue
+
+        raise RuntimeError(f"Communication device not found: {device_name!r}")
+
+    def open_communication_event_tab(self):
+        comm_win = self.open_communication()
+        self._click_communication_tab(comm_win, "Event")
+        return comm_win
+
+    def open_communication_device_tab(self):
+        comm_win = self.open_communication()
+        self._click_communication_tab(comm_win, "Device")
+        self.close_event_management_dialog()
+        if not self._has_visible_text(comm_win, "Add device"):
+            self._click_communication_tab(comm_win, "Device")
+            self.close_event_management_dialog()
+        return comm_win
+
+    def configure_communication_event(
+        self,
+        *,
+        event_name: str,
+        event_source: str = "IO",
+        device_name: str | None = None,
+        delimiter: str = ",",
+        value_type: str = "String",
+        match_rule: str = "Equal",
+        condition_value: str = "AIRVISION_SIGNAL_001",
+        save: bool = True,
+    ) -> None:
+        """Configure Communication Event tab."""
+        comm_win = self.open_communication_event_tab()
+        self._click_communication_button(comm_win, "New")
+
+        self._set_labeled_edit(comm_win, "Event name", event_name)
+        self._select_labeled_combo(comm_win, "Event source", event_source)
+
+        if device_name:
+            self._select_labeled_combo(comm_win, "Device", device_name, normalize=True)
+
+        self._set_labeled_edit(comm_win, "Delimiter", delimiter)
+        self._select_condition_combo(comm_win, 0, value_type)
+        self._select_condition_combo(comm_win, 1, match_rule)
+        self._set_condition_value(comm_win, condition_value)
+
+        if save:
+            self._click_communication_button(comm_win, "Save")
+            time.sleep(0.5)
 
     def close_communication(self) -> None:
         """关闭 Communication 管理窗口。"""
@@ -127,6 +196,18 @@ class CommunicationMixin:
             time.sleep(0.3)
         except TimeoutError:
             logger.debug("Communication 窗口未打开，无需关闭")
+
+    def close_event_management_dialog(self) -> None:
+        try:
+            dlg = self.get_window_by_title("Event management", timeout=1)
+        except TimeoutError:
+            return
+
+        try:
+            self._click_communication_button(dlg, "OK")
+        except Exception:
+            dlg.close()
+        time.sleep(0.3)
 
     def _get_communication_window(self, timeout: float = 10):
         return self.get_window_by_title(
@@ -160,6 +241,143 @@ class CommunicationMixin:
         btn.wait("exists visible", timeout=3)
         logger.info(f"点击按钮(child_window): {title!r}")
         self.mouse_click(btn)
+
+    def _click_communication_tab(self, parent, title: str) -> None:
+        target = title.strip().lower()
+        for elem in parent.descendants():
+            try:
+                if not elem.is_visible():
+                    continue
+                text = (elem.window_text() or "").strip().lower()
+                if text != target:
+                    continue
+                ctrl_type = elem.element_info.control_type or ""
+                if ctrl_type == "TabItem":
+                    logger.info(f"Click Communication tab: {title!r}")
+                    self.mouse_click(elem)
+                    time.sleep(0.3)
+                    return
+            except Exception:
+                continue
+
+        tab = parent.child_window(title=title, control_type="TabItem")
+        tab.wait("exists visible", timeout=3)
+        self.mouse_click(tab)
+        time.sleep(0.3)
+
+    def _has_visible_text(self, parent, text: str) -> bool:
+        try:
+            self._find_visible_text(parent, text)
+            return True
+        except RuntimeError:
+            return False
+
+    def _find_visible_text(self, parent, text: str):
+        target = text.strip().lower()
+        for elem in parent.descendants():
+            try:
+                if not elem.is_visible():
+                    continue
+                label = (elem.window_text() or "").strip().lower()
+                if label == target:
+                    return elem
+            except Exception:
+                continue
+        raise RuntimeError(f"Visible text not found: {text!r}")
+
+    def _find_labeled_controls(self, parent, label: str, class_name: str) -> list:
+        label_elem = self._find_visible_text(parent, label)
+        label_rect = label_elem.rectangle()
+        label_y = label_rect.top + label_rect.height() // 2
+        controls = []
+
+        for elem in parent.descendants(class_name=class_name):
+            try:
+                if not elem.is_visible():
+                    continue
+                rect = elem.rectangle()
+                elem_y = rect.top + rect.height() // 2
+                if rect.left < label_rect.right - 10:
+                    continue
+                if abs(elem_y - label_y) > 28:
+                    continue
+                controls.append((abs(elem_y - label_y), rect.left, elem))
+            except Exception:
+                continue
+
+        controls.sort(key=lambda item: (item[0], item[1]))
+        return [item[2] for item in controls]
+
+    def _find_labeled_control(self, parent, label: str, class_name: str):
+        controls = self._find_labeled_controls(parent, label, class_name)
+        if controls:
+            return controls[0]
+        raise RuntimeError(f"{class_name} for label {label!r} not found")
+
+    def _set_labeled_edit(self, parent, label: str, value: str) -> None:
+        edit = self._find_labeled_control(parent, label, "QLineEdit")
+        logger.info(f"Set {label}: {value!r}")
+        self.mouse_type(edit, value)
+
+    def _select_labeled_combo(
+        self,
+        parent,
+        label: str,
+        value: str,
+        *,
+        normalize: bool = False,
+    ) -> None:
+        combo = self._find_labeled_control(parent, label, "QComboBox")
+        self._select_combo_value(combo, value, normalize=normalize)
+
+    def _select_combo_value(self, combo, value: str, *, normalize: bool = False) -> None:
+        current = (combo.window_text() or "").strip()
+        if self._combo_text_matches(current, value, normalize):
+            return
+
+        logger.info(f"Select combo value: {value!r}")
+        self.mouse_click(combo)
+        time.sleep(0.25)
+        if self._pick_combo_list_item(value, normalize=normalize):
+            time.sleep(0.2)
+            return
+        raise RuntimeError(f"Combo option not found: {value!r}")
+
+    def _combo_text_matches(self, actual: str, expected: str, normalize: bool) -> bool:
+        if normalize:
+            return _normalize_communication_text(actual) == _normalize_communication_text(expected)
+        return actual.strip().lower() == expected.strip().lower()
+
+    def _condition_row_controls(self, parent, class_name: str) -> list:
+        controls = []
+        for elem in parent.descendants(class_name=class_name):
+            try:
+                if not elem.is_visible():
+                    continue
+                rect = elem.rectangle()
+                controls.append((rect.top, rect.left, elem))
+            except Exception:
+                continue
+        controls.sort(key=lambda item: (item[0], item[1]))
+        return [item[2] for item in controls]
+
+    def _select_condition_combo(self, parent, index: int, value: str) -> None:
+        combos = self._condition_row_controls(parent, "QComboBox")
+        if len(combos) <= index:
+            raise RuntimeError(f"Condition combo index {index} not found")
+        self._select_combo_value(combos[index], value)
+
+    def _set_condition_value(self, parent, value: str) -> None:
+        edits = self._condition_row_controls(parent, "QLineEdit")
+        editable = []
+        for edit in edits:
+            text = (edit.window_text() or "").strip()
+            if text in {"", "Condition value"}:
+                editable.append(edit)
+        if not editable:
+            raise RuntimeError("Condition value edit not found")
+        logger.info(f"Set condition value: {value!r}")
+        self.mouse_type(editable[-1], value)
 
     def _set_communication_device_name(self, dlg, name: str) -> None:
         edit = self._find_device_name_edit(dlg)
@@ -217,8 +435,12 @@ class CommunicationMixin:
         self.mouse_press_key("enter")
         time.sleep(0.2)
 
-    def _pick_combo_list_item(self, text: str) -> bool:
-        target = text.strip().lower()
+    def _pick_combo_list_item(self, text: str, *, normalize: bool = False) -> bool:
+        target = (
+            _normalize_communication_text(text)
+            if normalize
+            else text.strip().lower()
+        )
         pid = self.app.process
 
         for top_level_only in (True, False):
@@ -236,7 +458,12 @@ class CommunicationMixin:
                                 if not elem.is_visible():
                                     continue
                                 label = (elem.window_text() or "").strip()
-                                if label.lower() != target:
+                                candidate = (
+                                    _normalize_communication_text(label)
+                                    if normalize
+                                    else label.lower()
+                                )
+                                if candidate != target:
                                     continue
                                 cls = (elem.class_name() or "").lower()
                                 if cls in (
